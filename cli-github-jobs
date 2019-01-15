@@ -1,0 +1,68 @@
+#!/usr/bin/env node
+"use strict";
+const axios = require("axios"); // For making request to the Github Jobs
+const readline = require("readline"); // For reading user input
+
+const rl = readline.createInterface({
+  input: process.stdin,
+  output: process.stdout
+});
+
+// Get skill from User
+const getSkill = () => {
+  return new Promise((resolve, reject) => {
+    rl.question("Enter Skill(python/javascript) -> ", skill => {
+      // replace spaces with '+' for passing in url query string
+      skill = skill.replace(/\s+/g, "+").toLowerCase();
+      resolve(skill);
+    });
+  });
+};
+
+// Get location from User
+const getLocation = () => {
+  return new Promise((resolve, reject) => {
+    rl.question("Enter Location -> ", location => {
+      // replace spaces with '+' for passing in url query string;
+      location = location.replace(/\s+/g, "+").toLowerCase();
+      resolve(location);
+    });
+  });
+};
+
+const main = async () => {
+  const skill = await getSkill();
+  const location = await getLocation();
+  const url =
+    `https://jobs.github.com/positions.json` +
+    `?description=${skill}&location=${location}`;
+  rl.close();
+  axios({
+    method: "get",
+    url: url,
+    headers: { Accept: "application/json" } // this api needs this header set for the request
+  })
+    .then(res => {
+      if (res.data.length > 0) {
+        for (let i = 0; i < res.data.length; i++) {
+          let job = res.data[i];
+          console.log(`${i + 1}) 
+                           "type": ${job.type},\n 
+                           "url": ${job.url},\n 
+                           "company": ${job.company},\n
+                           "company_url": ${job.company_url},\n
+                           "location": ${job.location},\n
+                           "title": ${job.title}\n`);
+        }
+      } else {
+        console.log(
+          `Sorry , jobs for ${skill} in ${location} are currently not available in github jobs API, Try New York/ San Francisco`
+        );
+      }
+    })
+    .catch(err => {
+      console.log(err);
+    });
+};
+
+main();
